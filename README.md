@@ -183,7 +183,7 @@ enterprise-access-portal/
 
 ### Prerequisites
 
-- Python 3.10+
+- Python 3.12+
 - An LLM API key or local LLM model
 
 ### Installation
