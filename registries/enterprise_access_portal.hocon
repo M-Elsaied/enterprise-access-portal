@@ -1,8 +1,9 @@
 {
-    "llm_config": {
-        "model_name": "gpt-4o",
-        "temperature": 0.3
-    },
+    // Load the shared LLM configuration from a single source of truth.
+    // This allows users to change the model in one file rather than
+    // modifying the configuration for each agent network.
+    // Note that the file path here is relative to this file's directory (registries/).
+    include "llm_config.hocon",
     "max_iterations": 15000,
     "max_execution_seconds": 300,
     "commondefs": {
@@ -87,11 +88,7 @@ You may, in turn, be called by other agents in the system and have to act as a d
                 "ons_agent",
                 "access_issue_agent",
                 "knowledge_base_agent"
-            ],
-            "llm_config": {
-                "model_name": "gpt-4o",
-                "temperature": 0.3
-            }
+            ]
         },
         // --- MCP ADAPTER FOR VALIDATION SERVICE ---
         {
@@ -143,10 +140,6 @@ You may, in turn, be called by other agents in the system and have to act as a d
             "name": "ons_agent",
             "function": "aaosa_call",
             "instructions": "IMPORTANT: Before processing any inquiry, call validation_service with tool_name='prompt_retriever' and agent_name='ons_agent' to get your detailed instructions. Once you have retrieved your full instructions, follow them completely for handling the inquiry.",
-            "llm_config": {
-                "model_name": "gpt-4o",
-                "temperature": 0.3
-            },
             "tools": [
                 "validation_service",
                 "ons_ticket_verification_tool",
@@ -201,10 +194,6 @@ You may, in turn, be called by other agents in the system and have to act as a d
 
             Always maintain a professional and supportive tone when communicating with users about their access issues.
             """,
-            "llm_config": {
-                "model_name": "gpt-4o",
-                "temperature": 0.3
-            },
             "tools": [
                 "issue_ticket_creator_tool",
                 "incident_debugging_agent_tool"
@@ -533,11 +522,7 @@ Note: SR Coordinators (members of the SR Coord group) can also cancel requests a
             - For complex issues, I may recommend creating a support ticket or talking to a specialist
 
             What question can I help you with today?
-            """,
-            "llm_config": {
-                "model_name": "gpt-4o",
-                "temperature": 0.3
-            }
+            """
         }
     ]
 }

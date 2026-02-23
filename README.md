@@ -145,6 +145,7 @@ Sensitive user information (User ID, Dataiku ID, employee details) is passed thr
 enterprise-access-portal/
 |-- registries/
 |   |-- manifest.hocon                  # Declares active agent networks
+|   |-- llm_config.hocon               # Centralized LLM configuration (single source of truth)
 |   |-- enterprise_access_portal.hocon  # Agent network definition (agents, tools, routing)
 |
 |-- servers/
@@ -240,12 +241,78 @@ This starts the Neuro SAN server and loads the `enterprise_access_portal` agent 
 
 | Variable | Description | Default |
 |---|---|---|
-| `OPENAI_API_KEY` | OpenAI API key for GPT-4o | Required |
+| `OPENAI_API_KEY` | OpenAI API key for gpt-5.2 | Required |
 | `NEURO_SAN_SERVER_HOST` | Neuro SAN server hostname | `localhost` |
 | `NEURO_SAN_SERVER_HTTP_PORT` | Neuro SAN HTTP port | `8080` |
 | `NEURO_SAN_WEB_CLIENT_PORT` | Web client port | `5003` |
 | `INCIDENT_DEBUG_API_URL` | External debugging agent network URL | Optional |
 | `THINKING_FILE` | Path for agent thinking file | `/tmp/agent_thinking.txt` |
+
+### LLM Configuration
+
+The LLM model is configured in a single file: `registries/llm_config.hocon`. All agents in the network inherit from this centralized configuration via HOCON `include` and the framework's `DefaultsConfigFilter`.
+
+```hocon
+{
+    "llm_config": {
+        "class": "openai",
+        "model_name": "gpt-5.2"
+    }
+}
+```
+
+To switch models, edit only this file. No changes to `enterprise_access_portal.hocon` or individual agents are needed. Any agent can still override the default by defining its own `llm_config` block.
+
+### MCP Server Configuration
+
+The MCP server runs at `http://localhost:8000/mcp/` using Streamable HTTP transport. This URL is configured in two places:
+
+| File | Field |
+|---|---|
+| `registries/enterprise_access_portal.hocon` | `validation_service.args.base_url` |
+| `coded_tools/enterprise_access_portal/mcp/mcp_tool_adapter.py` | Default fallback in `async_invoke` |
+
+To change the MCP server URL (e.g., for a remote deployment), update the `base_url` in the HOCON config:
+
+```hocon
+"args": {
+    "base_url": "http://your-host:8000/mcp/"
+}
+```
+
+### Using sly_data
+
+`sly_data` is used to pass sensitive user information (User ID, name, Dataiku ID) to coded tools without exposing it in agent conversations or LLM context. You can attach `sly_data` through the Web UI or programmatically.
+
+**Web UI:** Expand the `sly_data` section below the message input and attach a JSON file or paste JSON directly.
+
+![sly_data UI](docs/images/sly_data.png)
+
+**JSON format** (using the demo user Gordon Banks from `knowdocs/users.md`):
+
+```json
+{
+    "user_id": "100",
+    "name": "Gordon Banks",
+    "dataiku_id": "300"
+}
+```
+
+**Programmatic (via `invoke_agent`):**
+
+```python
+response = invoke_agent(
+    agent_name="enterprise_access_portal",
+    user_text="I need Dataiku access for PROD",
+    sly_data={
+        "user_id": "100",
+        "name": "Gordon Banks",
+        "dataiku_id": "300"
+    }
+)
+```
+
+The `MCPToolAdapter` automatically pulls `user_id`, `name`, and `dataiku_id` from `sly_data` when calling `user_verification` and `training_completions` MCP tools. This means the user's identity (Gordon Banks, User ID `100`, Dataiku ID `300`) is verified without the LLM ever seeing the raw credentials.
 
 ### Adding a New Application
 
