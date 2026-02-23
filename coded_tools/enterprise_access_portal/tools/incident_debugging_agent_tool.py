@@ -51,17 +51,17 @@ class IncidentDebuggingAgentTool(CodedTool):
             request_id
         )
         
-        # Log input parameters
-        logging.debug(
-            "[IncidentDebuggingAgentTool] [%s] Input args: %s",
-            request_id, json.dumps(args, indent=2) if args else "None"
-        )
-        logging.debug(
-            "[IncidentDebuggingAgentTool] [%s] Input sly_data keys: %s",
-            request_id, list(sly_data.keys()) if sly_data else "None"
-        )
-        
         try:
+            # Log input parameters (use str() to avoid serialization errors
+            # from framework objects like ProgressJournal in args)
+            logging.debug(
+                "[IncidentDebuggingAgentTool] [%s] Input args: %s",
+                request_id, str(args) if args else "None"
+            )
+            logging.debug(
+                "[IncidentDebuggingAgentTool] [%s] Input sly_data keys: %s",
+                request_id, list(sly_data.keys()) if sly_data else "None"
+            )
             # Extract incident number from args
             incident_number = args.get('incident_number')
             
